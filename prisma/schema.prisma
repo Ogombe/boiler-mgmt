@@ -1,0 +1,438 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Factory {
+  id            String   @id @default(cuid())
+  name          String
+  code          String   @unique
+  location      String?
+  address       String?
+  city          String?
+  state         String?
+  country       String   @default("Kenya")
+  contactPerson String?
+  contactEmail  String?
+  contactPhone  String?
+  status        String   @default("Active")
+  boilers       Boiler[]
+  userFactories UserFactory[]
+  fuelPrices    FuelPriceConfig[]
+  dailyReports  DailyReport[]
+  fuelStocks    FuelStock[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          String    @default("Operator")
+  avatar        String?
+  phone         String?
+  passwordResetTokens PasswordResetToken[]
+  factories     UserFactory[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model UserFactory {
+  id        String   @id @default(cuid())
+  userId    String
+  factoryId String
+  role      String   @default("Boiler Operator")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  factory   Factory  @relation(fields: [factoryId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, factoryId])
+}
+
+model Boiler {
+  id                       String            @id @default(cuid())
+  factoryId                String
+  name                     String
+  serialNumber             String?
+  manufacturer             String?
+  model                    String?
+  boilerType               String?
+  capacity                 String?
+  capacityUnit             String?
+  operatingPressure        String?
+  designPressure           String?
+  maxAllowableWP           String?
+  designSteamTemp          String?
+  designFeedwaterTemp      String?
+  fuelType                 String?
+  fuelConsumptionRate      String?
+  heatingSurfaceArea       String?
+  designEfficiency         String?
+  numberOfPasses           String?
+  yearOfManufacture        String?
+  drumCapacity             String?
+  superheaterTemp          String?
+  superheaterPressure      String?
+  economizerType           String?
+  installationDate         String?
+  location                 String?
+  status                   String            @default("Active")
+  remarks                  String?
+  operationLogs            OperationLog[]
+  calculations             BoilerCalculation[]
+  maintenanceLogs          MaintenanceLog[]
+  inspections              InspectionRecord[]
+  waterChemistry            WaterChemistry[]
+  dailyReports              DailyReport[]
+  factory                  Factory           @relation(fields: [factoryId], references: [id])
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model OperationLog {
+  id              String   @id @default(cuid())
+  factoryId       String
+  boilerId        String?
+  logDate         String
+  hour            String
+  steamPressure   String?
+  steamTemp       String?
+  feedwaterTemp   String?
+  waterLevel      String?
+  fuelConsumption String?
+  flueGasTemp     String?
+  blowdownDone    String   @default("No")
+  remarks         String?
+  operatorName    String?
+  shift           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  boiler          Boiler?  @relation(fields: [boilerId], references: [id])
+}
+
+model BoilerCalculation {
+  id                String   @id @default(cuid())
+  factoryId         String
+  boilerId          String?
+  calcDate          String
+  steamPressure     String?
+  steamTemp         String?
+  feedwaterTemp     String?
+  fuelType          String?
+  fuelConsumption   String?
+  steamGenerated    String?
+  feedwaterUsed     String?
+  boilerEfficiency  String?
+  heatInput         String?
+  heatOutput        String?
+  evaporationRate   String?
+  equivalentEvap    String?
+  factorOfEvap      String?
+  co2Percentage     String?
+  o2Percentage      String?
+  coPercentage      String?
+  flueGasTemp       String?
+  stackLoss         String?
+  radiationLoss     String?
+  otherLosses       String?
+  remarks           String?
+  calculatedBy      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  boiler            Boiler?  @relation(fields: [boilerId], references: [id])
+}
+
+model MaintenanceLog {
+  id              String   @id @default(cuid())
+  factoryId       String
+  boilerId        String?
+  logDate         String
+  maintenanceType String
+  frequency       String
+  taskTitle       String
+  description     String?
+  performedBy     String?
+  status          String   @default("Pending")
+  priority        String   @default("Medium")
+  partsUsed       String?
+  cost            String?
+  nextDueDate     String?
+  completedDate   String?
+  remarks         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  boiler          Boiler?  @relation(fields: [boilerId], references: [id])
+}
+
+model InspectionRecord {
+  id                String   @id @default(cuid())
+  factoryId         String
+  boilerId          String?
+  inspectionDate    String
+  inspectionType    String
+  inspectorName     String?
+  authority         String?
+  certificateNo     String?
+  findings          String?
+  recommendations   String?
+  status            String   @default("Scheduled")
+  pressureTestResult String?
+  hydroTestResult   String?
+  nextInspectionDate String?
+  remarks           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  boiler            Boiler?  @relation(fields: [boilerId], references: [id])
+}
+
+model WaterChemistry {
+  id                  String   @id @default(cuid())
+  factoryId           String
+  boilerId            String?
+  testDate            String
+  sampleType          String
+  ph                  String?
+  conductivity        String?
+  totalHardness       String?
+  calciumHardness     String?
+  magnesiumHardness   String?
+  totalAlkalinity     String?
+  pAlkalinity         String?
+  mAlkalinity         String?
+  chloride            String?
+  sulfate             String?
+  dissolvedOxygen     String?
+  totalDissolvedSolids String?
+  totalSuspendedSolids String?
+  silica              String?
+  phosphate           String?
+  sulphite            String?
+  hydrazine           String?
+  iron                String?
+  copper              String?
+  turbidity           String?
+  color               String?
+  oilGrease           String?
+  treatmentChemicals  String?
+  samplePoint         String?
+  testedBy            String?
+  withinLimits        String   @default("Yes")
+  remarks             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  boiler              Boiler?  @relation(fields: [boilerId], references: [id])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  factoryId   String
+  userId      String?
+  type        String
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  priority    String   @default("medium")
+  link        String?
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  factoryId   String
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  details     String?
+  createdAt   DateTime @default(now())
+}
+
+model AlertRule {
+  id              String   @id @default(cuid())
+  factoryId       String
+  ruleType        String
+  enabled         Boolean  @default(true)
+  threshold       String?
+  notifyEmail     Boolean  @default(true)
+  notifyInApp     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PricingConfig {
+  id          String   @id @default(cuid())
+  factoryId   String   @unique
+  steamPrice  Float    @default(0)
+  steamUnit   String   @default("tonne")
+  waterPrice  Float    @default(0)
+  waterUnit   String   @default("m3")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FuelPriceConfig {
+  id          String   @id @default(cuid())
+  factoryId   String
+  fuelType    String
+  price       Float    @default(0)
+  unit        String   @default("litre")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  factory     Factory  @relation(fields: [factoryId], references: [id])
+  priceHistory FuelPriceHistory[]
+
+  @@unique([factoryId, fuelType])
+}
+
+model FuelPriceHistory {
+  id          String   @id @default(cuid())
+  fuelPriceConfigId String
+  oldPrice    Float
+  newPrice    Float
+  unit        String
+  changedBy   String?
+  changedByName String?
+  createdAt   DateTime @default(now())
+  fuelPriceConfig FuelPriceConfig @relation(fields: [fuelPriceConfigId], references: [id], onDelete: Cascade)
+}
+
+// ========== DAILY OPERATION REPORTS (Multi-Boiler, Stock-Aware) ==========
+
+/// Master daily report — one per factory per day. Contains summary-level data.
+model DailyReport {
+  id              String   @id @default(cuid())
+  factoryId       String
+  reportDate      String
+  boilerId        String?
+
+  // Production
+  productionHours Float?
+  forceOutageHours Float?
+
+  // Main Parameters
+  waterConsumed   Float?
+  biomassConsumed Float?
+  actualRatio     Float?
+  targetRatio     Float?
+  steamGenerated  Float?
+
+  // Water Meter Readings
+  waterMeterInitial String?
+  waterMeterFinal   String?
+  returnMeterInitial String?
+  returnMeterFinal   String?
+
+  // Steam Meter Readings
+  steamMeterInitial String?
+  steamMeterFinal   String?
+
+  // LBMS vs Manual Variance
+  lbmsRecorded     Float?
+  manualRecorded   Float?
+  varianceRecorded Float?
+  varianceCause    String?
+
+  // Water Analysis — Feed Water
+  fwTemperature    Float?
+  fwPh             Float?
+  fwTds            Float?
+  fwHardness       Float?
+
+  // Water Analysis — Boiler Water
+  bwTemperature    Float?
+  bwPh             Float?
+  bwTds            Float?
+  bwHardness       Float?
+
+  // Other Parameters
+  ashContent       Float?
+  avgMoisture      String?
+  flueGasTemp      Float?
+
+  remarks          String?
+  operatorName     String?
+
+  // Relations
+  boiler           Boiler?  @relation(fields: [boilerId], references: [id])
+  factory          Factory  @relation(fields: [factoryId], references: [id])
+  stockEntries     DailyReportStockEntry[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([factoryId, reportDate, boilerId])
+}
+
+/// Per-fuel-type stock entries within a daily report (opening, added, closing, consumed).
+model DailyReportStockEntry {
+  id              String   @id @default(cuid())
+  dailyReportId   String
+  fuelType        String   // PW, OFC, MC, Pellets, Coffee Husk, Maize Cob, LB, Briquettes, Macadamia Shell, FW, WC, HFO, etc.
+
+  openingQty      Float?
+  addedQty        Float?
+  closingQty      Float?
+  consumedQty     Float?
+
+  dailyReport     DailyReport @relation(fields: [dailyReportId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+/// Current fuel stock levels per factory — updated daily or on each stock addition.
+model FuelStock {
+  id              String   @id @default(cuid())
+  factoryId       String
+  fuelType        String
+  currentQty      Float    @default(0)
+  unit            String   @default("kgs")
+  lastUpdated     DateTime @default(now())
+  updatedBy       String?
+  lowStockThreshold Float?
+  remarks         String?
+
+  factory         Factory  @relation(fields: [factoryId], references: [id])
+  history         FuelStockHistory[]
+
+  @@unique([factoryId, fuelType])
+}
+
+/// History of stock changes (additions, consumption, adjustments).
+model FuelStockHistory {
+  id              String   @id @default(cuid())
+  fuelStockId     String
+  changeType      String   // "added", "consumed", "adjusted"
+  quantity        Float
+  previousQty     Float
+  newQty          Float
+  reference       String?  // e.g. daily report ID or PO number
+  remarks         String?
+  changedBy       String?
+
+  createdAt       DateTime @default(now())
+
+  fuelStock       FuelStock @relation(fields: [fuelStockId], references: [id], onDelete: Cascade)
+}
